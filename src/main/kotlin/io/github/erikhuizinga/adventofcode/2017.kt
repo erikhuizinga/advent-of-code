@@ -5,7 +5,7 @@ import java.net.URL
 import kotlin.math.*
 
 /** Created by erik.huizinga on 27-12-17 */
-fun main(args: Array<String>) = day10Part1()
+fun main(args: Array<String>) = day10Part2()
 
 //<editor-fold desc="Day 1">
 val captcha1: List<String> = listOf("1122", "1111", "1234", "91212129", "823936645345581272695677318513459491834641129844393742672553544439126314399846773234845535593355348931499496184839582118817689171948635864427852215325421433717458975771369522138766248225963242168658975326354785415252974294317138511141826226866364555761117178764543435899886711426319675443679829181257496966219435831621565519667989898725836639626681645821714861443141893427672384716732765884844772433374798185955741311116365899659833634237938878181367317218635539667357364295754744829595842962773524584225427969467467611641591834876769829719248136613147351298534885563144114336211961674392912181735773851634298227454157885241769156811787611897349965331474217223461176896643242975397227859696554492996937235423272549348349528559432214521551656971136859972232854126262349381254424597348874447736545722261957871275935756764184378994167427983811716675476257858556464755677478725146588747147857375293675711575747132471727933773512571368467386151966568598964631331428869762151853634362356935751298121849281442128796517663482391226174256395515166361514442624944181255952124524815268864131969151433888721213595267927325759562132732586252438456569556992685896517565257787464673718221817783929691626876446423134331749327322367571432532857235214364221471769481667118117729326429556357572421333798517168997863151927281418238491791975399357393494751913155219862399959646993428921878798119215675548847845477994836744929918954159722827194721564121532315459611433157384994543332773796862165243183378464731546787498174844781781139571984272235872866886275879944921329959736315296733981313643956576956851762149275521949177991988236529475373595217665112434727744235789852852765675189342753695377219374791548554786671473733124951946779531847479755363363288448281622183736545494372344785112312749694167483996738384351293899149136857728545977442763489799693492319549773328626918874718387697878235744154491677922317518952687439655962477734559232755624943644966227973617788182213621899579391324399386146423427262874437992579573858589183571854577861459758534348533553925167947139351819511798829977371215856637215221838924612644785498936263849489519896548811254628976642391428413984281758771868781714266261781359762798")
@@ -580,38 +580,126 @@ fun scoreGarbageGroups(input: String): Pair<Int, Int> {
 }
 //</editor-fold>
 
-val testInputDay10 = listOf(3, 4, 1, 5)
+//<editor-fold desc="Day 10">
+fun <T> testAssert(expected: T, actual: T) =
+    assert(expected == actual) { "Expected: $expected, but was: $actual" }
 
 val testSeedDay10 = (0..4).toList()
 
-val inputDay10 = listOf(70, 66, 255, 2, 48, 0, 54, 48, 80, 141, 244, 254, 160, 108, 1, 41)
+val seedDay10 = (0..255).toList()
 
-fun testDay10Part1() = println(knotHash(testInputDay10, testSeedDay10))
+val testInputDay10 = listOf(3, 4, 1, 5)
 
-fun day10Part1() = println(knotHash(inputDay10))
+val inputDay10 = "70,66,255,2,48,0,54,48,80,141,244,254,160,108,1,41"
+
+val inputDay10Part1 = inputDay10.split(',').map(String::toInt)
+
+val day10Part1Function = { hash: List<Int> -> hash[0] * hash[1] }
+
+fun testDay10Part1() = println(knotHash(
+    lengths = testInputDay10,
+    seed = testSeedDay10,
+    function = day10Part1Function
+))
+
+fun day10Part1() = println(knotHash(
+    lengths = inputDay10Part1,
+    seed = seedDay10,
+    function = day10Part1Function
+))
+
+val day10Part2Suffix = listOf(17, 31, 73, 47, 23)
+
+fun prepDay10Part2Input(input: String) = input.map(Char::toInt) + day10Part2Suffix
+
+val testInputDay10Part2 = prepDay10Part2Input("1,2,3")
+
+fun testDay10Part2Input() = testAssert(
+    listOf(49, 44, 50, 44, 51, 17, 31, 73, 47, 23),
+    testInputDay10Part2
+)
+
+val inputDay10Part2 = prepDay10Part2Input(inputDay10)
+
+val sparseToDenseHash = { window: List<Int> ->
+  window.drop(1).fold(window.first()) { acc, i -> acc xor i }
+}
+
+fun testSparseToDenseHash() {
+  testAssert(64, sparseToDenseHash(listOf(65, 27, 9, 1, 4, 3, 40, 50, 91, 7, 6, 0, 2, 5, 68, 22)))
+}
+
+val day10Part2Function = { hash: List<Int> ->
+  hash
+      .chunked(16, sparseToDenseHash)
+      .flatMap { it.toString(16).run { if (length == 1) "0" + this else this }.asIterable() }
+      .joinToString("")
+}
+
+val testDay10Part2HashValidatorInputs = listOf("", "AoC 2017", "1,2,3", "1,2,4")
+
+val testDay10Part2HashValidatorOutputs = listOf(
+    "a2582a3a0e66e6e86e3812dcb672a272",
+    "33efeb34ea91902bb2f59c9920caa6cd",
+    "3efbe78a8d82f29979031a4aa0b16a9d",
+    "63960835bcdc130f0b66d7ff4f6a5a8e"
+)
+
+val day10Part2Rounds = 64
+
+fun testDay10Part2() =
+    (testDay10Part2HashValidatorOutputs zip testDay10Part2HashValidatorInputs)
+        .forEach {
+          testAssert(
+              it.first,
+              knotHash(
+                  prepDay10Part2Input(it.second),
+                  seedDay10,
+                  day10Part2Rounds,
+                  day10Part2Function
+              )
+          )
+        }
+
+fun testDay10Part2Tests() {
+  testDay10Part2Input()
+  testSparseToDenseHash()
+  testDay10Part2()
+}
+
+fun day10Part2() =
+    println(knotHash(inputDay10Part2, seedDay10, day10Part2Rounds, day10Part2Function))
 
 fun <T> Iterable<T>.cycle(): Sequence<T> = generateSequence { this }.flatten()
 
-fun knotHash(lengths: List<Int>, seed: List<Int> = (0..255).toList()): Int {
+fun <T, V> knotHash(
+    lengths: List<Int>,
+    seed: List<T>,
+    rounds: Int = 1,
+    function: (List<T>) -> V
+): V {
   var hash = seed
   val n = seed.size
   var index = 0
   var skip = 0
 
-  lengths.forEach { length ->
-    hash = hash
-        .cycle()
-        .drop(index)
-        .take(length)
-        .asIterable()
-        .reversed()
-        .plus(hash.cycle().drop(index).take(n).drop(length))
-        .cycle()
-        .drop(n - index % n)
-        .take(n)
-        .toList()
-    index += length + skip++
+  for (ignored in 1..rounds) {
+    lengths.forEach { length ->
+      hash = hash
+          .cycle()
+          .drop(index)
+          .take(length)
+          .asIterable()
+          .reversed()
+          .plus(hash.cycle().drop(index).take(n).drop(length))
+          .cycle()
+          .drop(n - index % n)
+          .take(n)
+          .toList()
+      index += length + skip++
+    }
   }
 
-  return hash[0] * hash[1]
+  return function(hash)
 }
+//</editor-fold>
