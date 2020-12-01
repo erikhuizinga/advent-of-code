@@ -10,7 +10,7 @@ buildscript {
 }
 
 group 'advent-of-code'
-version '1.0-SNAPSHOT'
+version '2020.0.0-SNAPSHOT'
 
 apply plugin: 'kotlin'
 
